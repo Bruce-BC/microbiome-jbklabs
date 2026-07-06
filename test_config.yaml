@@ -13,10 +13,10 @@ dada2:
 # Diversity Parameters
 diversity:
   sampling_depth: 100
-  alpha_max_depth: 10000
+  alpha_max_depth: 500
 
-# Reference Database (QIIME2 2026.4 호환)
+# Reference Database (QIIME2 2026.4 호환 VSEARCH)
 database:
-  choice: "silva" # "silva" 또는 "greengenes2"
-  silva_classifier_url: "https://data.qiime2.org/2024.10/common/silva-138-99-nb-classifier.qza"
-  gg2_classifier_url: "https://data.qiime2.org/2024.10/common/gg2-2022.10-nb-classifier.qza"
+  choice: "silva"
+  silva_seqs_url: "https://data.qiime2.org/2024.10/common/silva-138-99-seqs.qza"
+  silva_tax_url: "https://data.qiime2.org/2024.10/common/silva-138-99-tax.qza"
