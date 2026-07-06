@@ -114,7 +114,9 @@ rule dada2_denoise:
         base_transition = f"{OUT_DIR}/dada2/base-transition-stats.qza",
         table_viz = f"{OUT_DIR}/dada2/table.qzv",
         rep_seqs_viz = f"{OUT_DIR}/dada2/rep-seqs.qzv",
-        stats_viz = f"{OUT_DIR}/dada2/denoising-stats.qzv"
+        stats_viz = f"{OUT_DIR}/dada2/denoising-stats.qzv",
+        feature_freq = f"{OUT_DIR}/dada2/feature-frequencies.qza",
+        sample_freq = f"{OUT_DIR}/dada2/sample-frequencies.qza"
     threads: N_THREADS
     params:
         trim_left_f = config["dada2"]["trim_left_f"],
@@ -139,6 +141,8 @@ rule dada2_denoise:
           
         qiime feature-table summarize \
           --i-table {output.table} \
+          --o-feature-frequencies {output.feature_freq} \
+          --o-sample-frequencies {output.sample_freq} \
           --o-summary {output.table_viz} \
           --m-metadata-file {METADATA_PATH}
           
