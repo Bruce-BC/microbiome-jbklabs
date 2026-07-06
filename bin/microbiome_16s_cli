@@ -14,6 +14,7 @@ function show_help {
     echo ""
     echo "Optional:"
     echo "  --metadata <file>  메타데이터 파일 지정 (생략 시 out-dir 내에 자동 생성)"
+    echo "  --config <file>    커스텀 config.yaml 파일 지정 (생략 시 기본 workflow/config.yaml 사용)"
     echo "  --cores <num>      할당할 CPU 코어 수 (기본값: all)"
     echo "  --help             도움말 출력"
     exit 1
@@ -22,6 +23,7 @@ function show_help {
 RAW_DATA=""
 OUT_DIR=""
 METADATA=""
+CONFIG_FILE=""
 CORES="all"
 
 while [[ "$#" -gt 0 ]]; do
@@ -29,6 +31,7 @@ while [[ "$#" -gt 0 ]]; do
         --raw_data) RAW_DATA="$2"; shift ;;
         --out_dir) OUT_DIR="$2"; shift ;;
         --metadata) METADATA="$2"; shift ;;
+        --config) CONFIG_FILE="$2"; shift ;;
         --cores) CORES="$2"; shift ;;
         --help|-h) show_help ;;
         *) echo "[Error] Unknown parameter: $1"; show_help ;;
@@ -61,6 +64,21 @@ if [ -n "$METADATA" ]; then
     METADATA_ARG="--config metadata=/metadata_dir/${METADATA_NAME}"
 fi
 
+# Config 파라미터 처리
+CONFIG_MNT=""
+CONFIG_ARG="--configfile workflow/config.yaml"
+if [ -n "$CONFIG_FILE" ]; then
+    if [ ! -f "$CONFIG_FILE" ]; then
+        echo "[Error] Config file not found at: $CONFIG_FILE"
+        exit 1
+    fi
+    CONFIG_DIR=$(dirname "$CONFIG_FILE")
+    CONFIG_NAME=$(basename "$CONFIG_FILE")
+    CONFIG_DIR=$(cd "$CONFIG_DIR" && pwd)
+    CONFIG_MNT="-v ${CONFIG_DIR}:/custom_config_dir"
+    CONFIG_ARG="--configfile /custom_config_dir/${CONFIG_NAME}"
+fi
+
 # 파이프라인 루트 디렉토리 식별
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 PIPELINE_DIR=$(dirname "$SCRIPT_DIR")
@@ -75,6 +93,11 @@ if [ -n "$METADATA" ]; then
 else
     echo " Metadata     : [Auto-Generate at Output Dir]"
 fi
+if [ -n "$CONFIG_FILE" ]; then
+    echo " Config File  : $CONFIG_FILE"
+else
+    echo " Config File  : [Default: workflow/config.yaml]"
+fi
 echo " Cores        : $CORES"
 echo " Workspace    : $PIPELINE_DIR"
 echo "======================================================"
@@ -85,6 +108,7 @@ docker run --rm \
     -v "${RAW_DATA}:/raw_data" \
     -v "${OUT_DIR}:/out_data" \
     ${METADATA_MNT} \
+    ${CONFIG_MNT} \
     -w /workspace \
     microbiome_qiime2:latest \
-    snakemake -s workflow/Snakefile --configfile workflow/config.yaml --cores $CORES ${METADATA_ARG}
+    snakemake -s workflow/Snakefile ${CONFIG_ARG} --cores $CORES ${METADATA_ARG}

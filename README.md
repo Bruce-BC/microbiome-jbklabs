@@ -46,6 +46,15 @@ docker build -t microbiome_qiime2:latest .
     --metadata /absolute/path/to/my_metadata.tsv
 ```
 
+### 커스텀 설정(config.yaml) 파일 지정
+기본적으로 파이프라인은 내부의 `workflow/config.yaml`을 사용하지만, 파라미터 조율을 위해 별도의 설정 파일을 명시할 수 있습니다.
+```bash
+./bin/microbiome_16s_cli \
+    --raw_data /absolute/path/to/my_fastq \
+    --out_dir /absolute/path/to/my_results \
+    --config /absolute/path/to/my_custom_config.yaml
+```
+
 ## 4. 분석 결과
 
 명령어 실행이 완료되면 지정하신 `--out_dir` 내부에 다음 항목이 생성됩니다:
