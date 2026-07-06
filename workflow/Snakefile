@@ -59,11 +59,18 @@ else:
     DB_URL = config["database"]["gg2_classifier_url"]
 
 # ==============================================================================
-# Rules
+# Rules (QIIME2 2026.4 버전에 최적화된 명령어 세트)
 # ==============================================================================
 rule all:
     input:
-        f"{OUT_DIR}/diversity/core-metrics-results"
+        f"{OUT_DIR}/import/demux.qzv",
+        f"{OUT_DIR}/dada2/table.qzv",
+        f"{OUT_DIR}/dada2/rep-seqs.qzv",
+        f"{OUT_DIR}/dada2/denoising-stats.qzv",
+        f"{OUT_DIR}/phylogeny/rooted-tree.qza",
+        f"{OUT_DIR}/diversity/core-metrics-results",
+        f"{OUT_DIR}/diversity/alpha-rarefaction.qzv",
+        f"{OUT_DIR}/taxonomy/taxa-bar-plots.qzv"
 
 rule get_database:
     output:
@@ -76,14 +83,25 @@ rule get_database:
 
 rule import_data:
     output:
-        demux = f"{OUT_DIR}/import/demux.qza"
+        demux = f"{OUT_DIR}/import/demux.qza",
+        demux_viz = f"{OUT_DIR}/import/demux.qzv"
     shell:
         """
+        # RAW_DIR 내의 fastq.gz 파일들만 임시 디렉토리로 심볼릭 링크를 걸어 import (메타데이터 등 다른 파일 혼입 방지)
+        mkdir -p {OUT_DIR}/import/tmp_fastq
+        ln -s {RAW_DIR}/*.fastq.gz {OUT_DIR}/import/tmp_fastq/ 2>/dev/null || cp {RAW_DIR}/*.fastq.gz {OUT_DIR}/import/tmp_fastq/
+        
         qiime tools import \
           --type 'SampleData[PairedEndSequencesWithQuality]' \
-          --input-path {RAW_DIR} \
+          --input-path {OUT_DIR}/import/tmp_fastq \
           --input-format CasavaOneEightSingleLanePerSampleDirFmt \
           --output-path {output.demux}
+          
+        rm -rf {OUT_DIR}/import/tmp_fastq
+          
+        qiime demux summarize \
+          --i-data {output.demux} \
+          --o-visualization {output.demux_viz}
         """
 
 rule dada2_denoise:
@@ -92,13 +110,18 @@ rule dada2_denoise:
     output:
         table = f"{OUT_DIR}/dada2/table.qza",
         rep_seqs = f"{OUT_DIR}/dada2/rep-seqs.qza",
-        stats = f"{OUT_DIR}/dada2/denoising-stats.qza"
+        stats = f"{OUT_DIR}/dada2/denoising-stats.qza",
+        base_transition = f"{OUT_DIR}/dada2/base-transition-stats.qza",
+        table_viz = f"{OUT_DIR}/dada2/table.qzv",
+        rep_seqs_viz = f"{OUT_DIR}/dada2/rep-seqs.qzv",
+        stats_viz = f"{OUT_DIR}/dada2/denoising-stats.qzv"
     threads: N_THREADS
     params:
         trim_left_f = config["dada2"]["trim_left_f"],
         trunc_len_f = config["dada2"]["trunc_len_f"],
         trim_left_r = config["dada2"]["trim_left_r"],
-        trunc_len_r = config["dada2"]["trunc_len_r"]
+        trunc_len_r = config["dada2"]["trunc_len_r"],
+        trunc_q = config.get("dada2", {}).get("trunc_q", 2)
     shell:
         """
         qiime dada2 denoise-paired \
@@ -107,10 +130,25 @@ rule dada2_denoise:
           --p-trunc-len-f {params.trunc_len_f} \
           --p-trim-left-r {params.trim_left_r} \
           --p-trunc-len-r {params.trunc_len_r} \
+          --p-trunc-q {params.trunc_q} \
           --p-n-threads {threads} \
           --o-table {output.table} \
           --o-representative-sequences {output.rep_seqs} \
-          --o-denoising-stats {output.stats}
+          --o-denoising-stats {output.stats} \
+          --o-base-transition-stats {output.base_transition}
+          
+        qiime feature-table summarize \
+          --i-table {output.table} \
+          --o-visualization {output.table_viz} \
+          --m-sample-metadata-file {METADATA_PATH}
+          
+        qiime feature-table tabulate-seqs \
+          --i-data {output.rep_seqs} \
+          --o-visualization {output.rep_seqs_viz}
+          
+        qiime metadata tabulate \
+          --m-input-file {output.stats} \
+          --o-visualization {output.stats_viz}
         """
 
 rule phylogeny:
@@ -161,10 +199,12 @@ rule diversity_analysis:
         rooted_tree = f"{OUT_DIR}/phylogeny/rooted-tree.qza",
         table = f"{OUT_DIR}/dada2/table.qza"
     output:
-        core_metrics = directory(f"{OUT_DIR}/diversity/core-metrics-results")
+        core_metrics = directory(f"{OUT_DIR}/diversity/core-metrics-results"),
+        alpha_rarefaction = f"{OUT_DIR}/diversity/alpha-rarefaction.qzv"
     threads: N_THREADS
     params:
-        sampling_depth = 10000
+        sampling_depth = config.get("diversity", {}).get("sampling_depth", 10000),
+        max_depth = config.get("diversity", {}).get("alpha_max_depth", 10000)
     shell:
         """
         # Beta Diversity 지표 (Jaccard, Bray-Curtis, UniFrac) 및 PCoA 분석 수행
@@ -175,4 +215,12 @@ rule diversity_analysis:
           --m-metadata-file {METADATA_PATH} \
           --p-n-jobs-or-threads {threads} \
           --output-dir {output.core_metrics}
+          
+        # Alpha Rarefaction Plot 생성
+        qiime diversity alpha-rarefaction \
+          --i-table {input.table} \
+          --i-phylogeny {input.rooted_tree} \
+          --p-max-depth {params.max_depth} \
+          --m-metadata-file {METADATA_PATH} \
+          --o-visualization {output.alpha_rarefaction}
         """

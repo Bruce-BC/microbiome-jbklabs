@@ -1,6 +1,6 @@
 # 16S Microbiome QIIME2 CLI 파이프라인
 
-본 프로젝트는 QIIME2(`2023.9` 버전 고정) 기반으로 300bp Paired-end 16S rRNA 시퀀싱 데이터를 Beta 다양성까지 논스톱 자동 분석하는 파이프라인입니다. 모듈형 아키텍처로 구성되어 있으며, 단일 CLI 명령어로 외부 Raw 데이터와 Output 경로를 자유롭게 매핑하여 사용할 수 있습니다.
+본 프로젝트는 QIIME2(`2026.4` 버전) 기반으로 300bp Paired-end 16S rRNA 시퀀싱 데이터를 Beta 다양성까지 논스톱 자동 분석하는 파이프라인입니다. 모듈형 아키텍처로 구성되어 있으며, 단일 CLI 명령어로 외부 Raw 데이터와 Output 경로를 자유롭게 매핑하여 사용할 수 있습니다.
 
 ## 1. 디렉토리 구조
 ```text
@@ -49,9 +49,10 @@ docker build -t microbiome_qiime2:latest .
 ## 4. 분석 결과
 
 명령어 실행이 완료되면 지정하신 `--out_dir` 내부에 다음 항목이 생성됩니다:
-- `import/`: Demultiplexed QIIME2 아티팩트
-- `dada2/`: ASV Table 및 Denoising Stats
+- `import/`: Demultiplexed QIIME2 아티팩트 및 QC 요약(`.qzv`)
+- `dada2/`: ASV Table, Denoising Stats, Representative Sequences 및 각종 시각화(`.qzv`)
 - `taxonomy/`: 종 동정 결과 및 Barplot 시각화(`.qzv`)
-- `diversity/`: **[Beta Diversity 포함]** Core Metrics Phylogenetic 결과물들 (PCoA 시각화 등)
+- `diversity/`: **[Beta Diversity 포함]** Core Metrics Phylogenetic 결과물(PCoA 등) 및 Alpha Rarefaction 시각화(`.qzv`)
+- `phylogeny/`: 계통수 분석 산출물
 
 `.qzv` 확장자는 [QIIME2 View](https://view.qiime2.org)에 드래그 앤 드롭하여 바로 브라우저에서 확인할 수 있습니다.
