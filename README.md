@@ -63,5 +63,7 @@ docker build -t microbiome_qiime2:latest .
 - `taxonomy/`: 종 동정 결과 및 Barplot 시각화(`.qzv`)
 - `diversity/`: **[Beta Diversity 포함]** Core Metrics Phylogenetic 결과물(PCoA 등) 및 Alpha Rarefaction 시각화(`.qzv`)
 - `phylogeny/`: 계통수 분석 산출물
+- `report.html`: Snakemake 전체 실행 통계 및 각 룰별 파라미터가 정리된 HTML 리포트
+- `dag.svg`: 파이프라인 전체의 워크플로우 의존성을 보여주는 DAG (Directed Acyclic Graph) 시각화 이미지
 
 `.qzv` 확장자는 [QIIME2 View](https://view.qiime2.org)에 드래그 앤 드롭하여 바로 브라우저에서 확인할 수 있습니다.
