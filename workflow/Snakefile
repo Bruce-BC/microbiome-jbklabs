@@ -227,11 +227,55 @@ rule diversity_analysis:
         max_depth = config.get("diversity", {}).get("alpha_max_depth", 10000)
     shell:
         """
+        # Python script to extract min sample depth
+        MIN_DEPTH=$(python -c "
+import sys, qiime2, pandas as pd
+try:
+    table = qiime2.Artifact.load('{input.table}')
+    sums = table.view(pd.DataFrame).sum(axis=1)
+    sums = sums[sums > 0] # 0 read samples (blanks) exclude
+    if len(sums) == 0:
+        print("0")
+    else:
+        min_depth = int(sums.min())
+        print(min_depth)
+except Exception as e:
+    print('ERROR:', e, file=sys.stderr)
+    sys.exit(1)
+")
+        if [ $? -ne 0 ]; then
+            echo "Failed to extract minimum depth from feature table."
+            exit 1
+        fi
+        
+        echo "========================================================="
+        echo " Diversity Analysis Checkpoint"
+        echo " Minimum Sample Depth: $MIN_DEPTH"
+        
+        if [ "$MIN_DEPTH" -lt 300 ]; then
+            echo " 🛑 ERROR: Minimum sample depth ($MIN_DEPTH) is below the 300 threshold!"
+            echo " Pipeline aborted to prevent unreliable diversity metrics."
+            echo "========================================================="
+            exit 1
+        fi
+        
+        USER_MAX={params.max_depth}
+        if [ "$MIN_DEPTH" -lt "$USER_MAX" ]; then
+            echo " ⚠️  Adjusting max depth from $USER_MAX to $MIN_DEPTH"
+            ADJ_MAX=$MIN_DEPTH
+        else
+            ADJ_MAX=$USER_MAX
+        fi
+        echo "========================================================="
+        
+        # User requested 10 intervals
+        STEPS=10
+        
         # Beta Diversity 지표 (Jaccard, Bray-Curtis, UniFrac) 및 PCoA 분석 수행
         qiime diversity core-metrics-phylogenetic \
           --i-phylogeny {input.rooted_tree} \
           --i-table {input.table} \
-          --p-sampling-depth {params.sampling_depth} \
+          --p-sampling-depth $ADJ_MAX \
           --m-metadata-file {METADATA_PATH} \
           --p-n-jobs-or-threads {threads} \
           --output-dir {output.core_metrics}
@@ -240,7 +284,8 @@ rule diversity_analysis:
         qiime diversity alpha-rarefaction \
           --i-table {input.table} \
           --i-phylogeny {input.rooted_tree} \
-          --p-max-depth {params.max_depth} \
+          --p-max-depth $ADJ_MAX \
+          --p-steps $STEPS \
           --m-metadata-file {METADATA_PATH} \
           --o-visualization {output.alpha_rarefaction}
         """

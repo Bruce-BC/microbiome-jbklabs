@@ -13,7 +13,7 @@ dada2:
 # Diversity Parameters
 diversity:
   sampling_depth: 100
-  alpha_max_depth: 500
+  alpha_max_depth: 11000
 
 # Reference Database (QIIME2 2026.4 호환 VSEARCH)
 database:
