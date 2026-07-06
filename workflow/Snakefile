@@ -139,8 +139,8 @@ rule dada2_denoise:
           
         qiime feature-table summarize \
           --i-table {output.table} \
-          --o-visualization {output.table_viz} \
-          --m-sample-metadata-file {METADATA_PATH}
+          --o-summary {output.table_viz} \
+          --m-metadata-file {METADATA_PATH}
           
         qiime feature-table tabulate-seqs \
           --i-data {output.rep_seqs} \
