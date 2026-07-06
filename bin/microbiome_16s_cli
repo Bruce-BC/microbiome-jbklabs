@@ -111,7 +111,8 @@ docker run --rm \
     ${CONFIG_MNT} \
     -w /workspace \
     microbiome_qiime2:latest \
-    bash -c "snakemake -s workflow/Snakefile ${CONFIG_ARG} --cores $CORES ${METADATA_ARG} && \
+    bash -c "snakemake -s workflow/Snakefile ${CONFIG_ARG} --cores $CORES ${METADATA_ARG} --unlock && \
+             snakemake -s workflow/Snakefile ${CONFIG_ARG} --cores $CORES ${METADATA_ARG} && \
              echo 'Generating Snakemake Report...' && \
              snakemake -s workflow/Snakefile ${CONFIG_ARG} --cores $CORES ${METADATA_ARG} --report /out_data/report.html && \
              echo 'Generating DAG graph...' && \
