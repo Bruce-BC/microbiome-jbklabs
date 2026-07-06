@@ -20,16 +20,22 @@ if not os.path.exists(METADATA_PATH):
     print(f"Warning: 메타데이터 파일({METADATA_PATH})이 없어 자동 생성합니다...")
     os.makedirs(os.path.dirname(METADATA_PATH) or ".", exist_ok=True)
     
+    import re
     files = glob.glob(os.path.join(RAW_DIR, "*_R1*.fastq.gz")) + glob.glob(os.path.join(RAW_DIR, "*_1*.fastq.gz"))
     sample_ids = set()
     for f in files:
         b = os.path.basename(f)
-        for token in ["_S", "_R1", "_1"]:
-            if token in b:
-                sample_ids.add(b.split(token)[0])
-                break
+        # QIIME2 Casava 1.8 Regex 추출 규칙 반영
+        match = re.match(r"^(.+?)(?:_S\d+)?(?:_\d+)?_L\d{3}_R[12]_\d{3}\.fastq\.gz$", b)
+        if match:
+            sample_ids.add(match.group(1))
         else:
-            sample_ids.add(b.split(".")[0])
+            for token in ["_S", "_R1", "_1"]:
+                if token in b:
+                    sample_ids.add(b.split(token)[0])
+                    break
+            else:
+                sample_ids.add(b.split(".")[0])
     
     with open(METADATA_PATH, "w") as out:
         out.write("sample-id\tGroup\n")
