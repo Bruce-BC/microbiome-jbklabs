@@ -1,0 +1,3 @@
+toy_results/
+.snakemake/
+db/16s_classifiers/*.qza

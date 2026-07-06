@@ -1,0 +1,11 @@
+name: rachis-qiime2-2026.4
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - snakemake
+  - pandas
+  - seaborn
+  - matplotlib
+  - scipy

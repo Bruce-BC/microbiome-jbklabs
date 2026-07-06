@@ -1,0 +1,16 @@
+# Pipeline Parameters
+pipeline:
+  threads: "auto"
+
+# DADA2 Parameters (300bp Paired-end)
+dada2:
+  trim_left_f: 0
+  trunc_len_f: 280
+  trim_left_r: 0
+  trunc_len_r: 260
+
+# Reference Database
+database:
+  choice: "silva" # "silva" 또는 "greengenes2"
+  silva_classifier_url: "https://data.qiime2.org/2023.9/common/silva-138-99-nb-classifier.qza"
+  gg2_classifier_url: "https://data.qiime2.org/2023.9/common/gg2-2022.10-nb-classifier.qza"
